@@ -1,11 +1,10 @@
 module Main exposing (..)
 
 import Html exposing (Html)
-import Html.Attributes exposing (..)
-import Html.Events exposing (..)
 import Html.App as App
 import Svg.Attributes exposing (..)
-import Svg exposing (..)
+import Svg.Events exposing (onMouseOver, onMouseOut, onMouseDown)
+import Svg exposing (Svg, svg, circle)
 
 
 main : Program Never
@@ -25,27 +24,52 @@ type alias Point =
     , y : Int
     }
 
-type alias Model = Point
+type alias Model =
+    { list : List Point
+    , selected : Maybe Point
+    , hovered : Maybe Point
+    }
 
 model : Model
 model =
-    { x = 50
-    , y = 50
+    { list = [{ x = 50
+              , y = 50
+              }
+              ,{ x = 70
+              , y = 30
+              }]
+    , selected = Nothing
+    , hovered = Nothing
     }
 
 -- Update
 
-type Msg = Stop
+type Msg = Hovered Point | Selected  Point | Unhovered
 update : Msg -> Model -> Model
-update msg model = model
+update msg model =
+    case msg of
+        Hovered point -> { model | hovered = Just point }
+        Unhovered -> { model | hovered = Nothing}
+        Selected point -> { model | selected = Just point }
+
 
 -- View
 
 view : Model -> Html Msg
 view model =
-    Html.div []
-    [
-    svg [ viewBox "0 0 100 100", Svg.Attributes.width "300px" ]
-      [ circle [ cx (toString model.x), cy (toString model.y), r "5", fill "#0B79CE" ] []
-      ]
-    ]
+    let
+        drawPoint : Point -> Svg Msg 
+        drawPoint point =
+            circle [ cx (toString point.x)
+                , cy (toString point.y)
+                , r "2"
+                , fill <| if Just point == model.selected then "green" else if Just point == model.hovered then "blue" else "red"
+                , onMouseOver <| Hovered point
+                , onMouseOut <| Unhovered
+                , onMouseDown <| Selected point ] []
+    in
+        Html.div []
+        [
+            svg [ viewBox "0 0 100 100", Svg.Attributes.width "300px" ]
+            (List.map drawPoint model.list)
+        ]
