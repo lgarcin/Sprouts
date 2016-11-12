@@ -20,22 +20,25 @@ main =
 -- Model
 
 type alias Point =
-    { x : Int
+    { id : Int
+    , x : Int
     , y : Int
     }
 
 type alias Model =
     { list : List Point
-    , selected : Maybe Point
-    , hovered : Maybe Point
+    , selected : Maybe Int
+    , hovered : Maybe Int
     }
 
 model : Model
 model =
-    { list = [{ x = 50
+    { list = [{ id = 0
+              , x = 50
               , y = 50
               }
-              ,{ x = 70
+              ,{ id = 1
+              , x = 70
               , y = 30
               }]
     , selected = Nothing
@@ -44,13 +47,13 @@ model =
 
 -- Update
 
-type Msg = Hovered Point | Selected  Point | Unhovered
+type Msg = Hovered Int | Selected  Int | Unhovered
 update : Msg -> Model -> Model
 update msg model =
     case msg of
-        Hovered point -> { model | hovered = Just point }
+        Hovered id -> { model | hovered = Just id }
         Unhovered -> { model | hovered = Nothing}
-        Selected point -> { model | selected = Just point }
+        Selected id -> { model | selected = Just id }
 
 
 -- View
@@ -63,10 +66,10 @@ view model =
             circle [ cx (toString point.x)
                 , cy (toString point.y)
                 , r "2"
-                , fill <| if Just point == model.selected then "green" else if Just point == model.hovered then "blue" else "red"
-                , onMouseOver <| Hovered point
+                , fill <| if Just point.id == model.selected then "green" else if Just point.id == model.hovered then "blue" else "red"
+                , onMouseOver <| Hovered point.id
                 , onMouseOut <| Unhovered
-                , onMouseDown <| Selected point ] []
+                , onMouseDown <| Selected point.id ] []
     in
         Html.div []
         [
