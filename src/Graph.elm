@@ -1,45 +1,117 @@
 module Graph exposing (..)
 
-import Set exposing (Set)
+import Html exposing (text)
+import List.Extra exposing (..)
 
-type alias Node = Int
 
-type alias Edge = (Node, Node)
+type alias Node =
+    Int
 
-type alias Face = List Node
+
+type alias Boundary =
+    List Node
+
+
+type alias Region =
+    List Boundary
+
 
 type alias Graph =
-    { nodes : Set Node
-    , edges : Set Edge
-    , faces : Set Face
-    }
+    List Region
 
-insert : Node -> Node -> Node -> Face -> Graph -> Graph
-insert n n1 n2 f g =
-    { g | nodes = Set.insert n g.nodes
-        , edges = g.edges |> Set.insert (n,n1) |> Set.insert (n,n2)
-        , faces = g.faces |> Set.remove f |> Set.union (Set.fromList (split n n1 n2 f))
-    }
 
-split : Node -> Node -> Node -> Face -> List Face
-split n n1 n2 f =
-    if List.head f == Just n1 then
-        case split' n2 [] f of
-            (f1,f2) -> [n2::n::f1,n1::n::f2]
-    else
-        split n n1 n2 (cycle f)
+twoBoundaryMove : Node -> Node -> Graph -> Graph
+twoBoundaryMove n1 n2 g =
+    let
+        r =
+            Maybe.withDefault [] (List.Extra.find (\r -> List.member n1 (List.concat r) && List.member n2 (List.concat r)) g)
 
-cycle : List a -> List a
-cycle l =
+        b1 =
+            Maybe.withDefault [] (List.Extra.find (List.member n1) r)
+
+        b2 =
+            Maybe.withDefault [] (List.Extra.find (List.member n2) r)
+    in
+        replaceIf (\rr -> rr == r) ((merge n1 n2 (newNode g) b1 b2) :: (remove b2 (remove b1 r))) g
+
+
+merge : Node -> Node -> Node -> Boundary -> Boundary -> Boundary
+merge n1 n2 x b1 b2 =
+    let
+        ( bb1, bb2 ) =
+            ( cycle n1 b1, cycle n2 b2 )
+    in
+        case ( bb1, bb2 ) of
+            ( [], [] ) ->
+                []
+
+            ( _, [] ) ->
+                bb1
+
+            ( [], _ ) ->
+                bb2
+
+            ( [ _ ], [ _ ] ) ->
+                n1 :: x :: n2 :: [ x ]
+
+            ( _ :: _ :: _, [ _ ] ) ->
+                bb1 ++ (n1 :: x :: n2 :: [ x ])
+
+            ( [ _ ], _ :: _ :: _ ) ->
+                (n1 :: x :: bb2) ++ [ n2, x ]
+
+            ( _ :: _ :: _, _ :: _ :: _ ) ->
+                bb1 ++ (n1 :: x :: bb2) ++ [ n2, x ]
+
+
+cycle : Node -> Boundary -> Boundary
+cycle x l =
     case l of
-        [] -> []
-        xs::li -> li ++ [xs]
+        [] ->
+            []
 
-split' : Node -> Face -> Face -> (Face,Face)
-split' n f1 f2 =
-    if List.head f2 == Just n then
-        (f1,f2)
-    else
-        case f2 of
-            [] -> (f1,f2)
-            xs::li -> split' n (f1 ++ [xs]) (li)
+        xs :: li ->
+            if xs == x then
+                l
+            else
+                cycle x (li ++ [ xs ])
+
+
+oneBoundaryMove : Node -> Node -> Region -> (Boundary -> Bool) -> Graph -> Graph
+oneBoundaryMove n1 n2 r func g =
+    let
+        b =
+            Maybe.withDefault [] (List.Extra.find (\b -> List.member n1 b && List.member n2 b) r)
+
+        ( b1, b2 ) =
+            split n1 n2 (newNode g) b
+    in
+        (b1 :: (List.filter func r |> List.Extra.remove b)) :: (b2 :: (List.filter (not << func) r |> List.Extra.remove b)) :: (g |> List.Extra.remove r)
+
+
+split : Node -> Node -> Node -> Boundary -> ( Boundary, Boundary )
+split n1 n2 x b =
+    case b of
+        [] ->
+            ( [], [] )
+
+        [ _ ] ->
+            ( [ n1, x ], [ n2, x ] )
+
+        _ :: _ ->
+            ( List.Extra.takeWhileRight (\x -> x /= n2) (cycle n1 b) ++ [ n1, x, n2 ], (List.Extra.takeWhile (\x -> x /= n2) (cycle n1 b)) ++ [ n2, x ] )
+
+
+newNode : Graph -> Node
+newNode g =
+    case List.maximum <| List.concat <| List.concat <| g of
+        Nothing ->
+            0
+
+        Just v ->
+            v + 1
+
+
+main : Html.Html a
+main =
+    text (toString (split 0 0 1 [ 0 ]))
