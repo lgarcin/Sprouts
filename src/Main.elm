@@ -7,12 +7,22 @@ import Svg.Events exposing (onMouseOver, onMouseOut, onMouseDown)
 import Svg exposing (Svg, svg, circle)
 
 
+init : (Model, Cmd Msg)
+init =
+  (initialModel , Cmd.none)
+
+subscriptions : Model -> Sub Msg
+subscriptions model =
+  Sub.none
+
+
 main : Program Never
 main =
-    App.beginnerProgram
-        { model = model
+    App.program
+        { init = init
         , view = view
         , update = update
+        , subscriptions = subscriptions 
         }
 
 
@@ -31,8 +41,8 @@ type alias Model =
     , hovered : Maybe Int
     }
 
-model : Model
-model =
+initialModel : Model
+initialModel =
     { list = [{ id = 0
               , x = 50
               , y = 50
@@ -48,12 +58,12 @@ model =
 -- Update
 
 type Msg = Hovered Int | Selected  Int | Unhovered
-update : Msg -> Model -> Model
+update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
     case msg of
-        Hovered id -> { model | hovered = Just id }
-        Unhovered -> { model | hovered = Nothing}
-        Selected id -> { model | selected = Just id }
+        Hovered id -> ({ model | hovered = Just id }, Cmd.none)
+        Unhovered -> ({ model | hovered = Nothing}, Cmd.none)
+        Selected id -> ({ model | selected = Just id }, Cmd.none)
 
 
 -- View
