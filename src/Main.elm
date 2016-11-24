@@ -4,7 +4,7 @@ import Models exposing (..)
 import Messages exposing (..)
 import View exposing (..)
 import Update exposing (..)
-import Html.App exposing (..)
+import Html exposing (..)
 import Keyboard
 
 
@@ -20,9 +20,9 @@ init =
     ( initialModel, Cmd.none )
 
 
-main : Program Never
+main : Program Never Model Msg
 main =
-    Html.App.program
+    Html.program
         { init = init
         , view = view
         , update = update

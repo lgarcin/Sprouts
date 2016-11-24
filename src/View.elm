@@ -8,77 +8,20 @@ import Svg exposing (Svg, svg, circle, rect)
 import Html exposing (..)
 
 
-nbInBoundary : Node -> Boundary -> Int
-nbInBoundary n b =
-    case b of
-        [] ->
-            0
-
-        [ _ ] ->
-            0
-
-        _ :: _ :: _ ->
-            List.sum
-                (List.map
-                    (\x ->
-                        if x == n then
-                            1
-                        else
-                            0
-                    )
-                    b
-                )
-
-
 drawGraph : Model -> List (Svg Msg)
 drawGraph model =
     let
-        order node =
-            List.sum (List.concat (List.map (List.map (nbInBoundary node)) model.graph))
-
         drawRegion ind region =
             let
-                selectable' node =
-                    case model.selectedNode of
-                        Nothing ->
-                            (order node) < 3
-
-                        Just n ->
-                            (order node) < 2 || (n /= node && (order node) < 3)
-
-                selectable node =
-                    case model.selectedRegion of
-                        Nothing ->
-                            selectable' node
-
-                        Just r ->
-                            (selectable' node) && (region == r)
-
-                selected' node =
-                    case model.selectedNode of
-                        Nothing ->
-                            False
-
-                        Just n ->
-                            node == n
-
-                selected node =
-                    case model.selectedRegion of
-                        Nothing ->
-                            selected' node
-
-                        Just r ->
-                            (selected' node) && (region == r)
-
                 drawBoundary i boundary =
                     let
                         pointStyle node =
-                            (if selectable node then
+                            (if selectable node region model then
                                 [ fill "orange", onMouseDown <| Select node boundary region ]
                              else
                                 [ fill "green" ]
                             )
-                                ++ (if selected node then
+                                ++ (if selected node region model then
                                         [ stroke "black" ]
                                     else
                                         []
@@ -87,7 +30,7 @@ drawGraph model =
                         drawNode i node =
                             Svg.g []
                                 [ circle ([ cx (toString (i * 30)), cy "0", r "5" ] ++ (pointStyle node)) []
-                                , Svg.text' [ x (toString (i * 30)), y "0" ] [ Svg.text (toString node) ]
+                                , Svg.text_ [ x (toString (i * 30)), y "0" ] [ Svg.text (toString node) ]
                                 ]
                     in
                         Svg.g [ transform <| "translate" ++ (toString ( 20, 10 + i * 40 )) ]
@@ -114,4 +57,5 @@ view model =
     Html.div []
         [ Svg.svg [ viewBox "0 0 900 900", Svg.Attributes.width "900px" ]
             (drawGraph model)
+        , text (toString (playable model.graph))
         ]

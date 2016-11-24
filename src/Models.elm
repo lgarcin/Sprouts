@@ -1,5 +1,7 @@
 module Models exposing (..)
 
+import List.Extra exposing (..)
+
 
 type alias Node =
     Int
@@ -25,8 +27,8 @@ type alias Model =
     }
 
 
-initialModel' : Model
-initialModel' =
+initialModel_ : Model
+initialModel_ =
     { graph =
         [ [ [ 1, 12 ] ]
         , [ [ 1, 12 ]
@@ -47,6 +49,33 @@ initialModel' =
     }
 
 
+nbInBoundary : Node -> Boundary -> Int
+nbInBoundary n b =
+    case b of
+        [] ->
+            0
+
+        [ _ ] ->
+            0
+
+        _ :: _ :: _ ->
+            List.sum
+                (List.map
+                    (\x ->
+                        if x == n then
+                            1
+                        else
+                            0
+                    )
+                    b
+                )
+
+
+order : Node -> Graph -> Int
+order node graph =
+    List.sum (List.concat (List.map (List.map (nbInBoundary node)) graph))
+
+
 initialModel : Model
 initialModel =
     { graph =
@@ -55,3 +84,60 @@ initialModel =
     , selectedBoundary = Nothing
     , selectedNode = Nothing
     }
+
+
+selectable_ : Node -> Model -> Bool
+selectable_ node model =
+    case model.selectedNode of
+        Nothing ->
+            (order node model.graph) < 3
+
+        Just n ->
+            (order node model.graph) < 2 || (n /= node && (order node model.graph) < 3)
+
+
+selectable : Node -> Region -> Model -> Bool
+selectable node region model =
+    case model.selectedRegion of
+        Nothing ->
+            selectable_ node model
+
+        Just r ->
+            (selectable_ node model) && (region == r)
+
+
+selected_ : Node -> Model -> Bool
+selected_ node model =
+    case model.selectedNode of
+        Nothing ->
+            False
+
+        Just n ->
+            node == n
+
+
+selected : Node -> Region -> Model -> Bool
+selected node region model =
+    case model.selectedRegion of
+        Nothing ->
+            selected_ node model
+
+        Just r ->
+            (selected_ node model) && (region == r)
+
+
+cartesianSquare : List a -> List ( a, a )
+cartesianSquare l =
+    List.concatMap
+        (\x -> List.map (\y -> ( x, y )) l)
+        l
+
+playable : Graph -> Bool
+playable graph =
+    let
+        connectable (n1,n2) =
+            (order n1 graph < 2) || (n1 /= n2 && (order n1 graph) < 3 && (order n2 graph) < 3)
+        alive region =
+            List.foldl (||) False (List.map connectable (cartesianSquare <| List.Extra.unique <| List.concat <| region))
+    in
+        List.foldl (||) False (List.map alive graph) 
