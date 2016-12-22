@@ -132,12 +132,14 @@ cartesianSquare l =
         (\x -> List.map (\y -> ( x, y )) l)
         l
 
+
 playable : Graph -> Bool
 playable graph =
     let
-        connectable (n1,n2) =
+        connectable ( n1, n2 ) =
             (order n1 graph < 2) || (n1 /= n2 && (order n1 graph) < 3 && (order n2 graph) < 3)
+
         alive region =
             List.foldl (||) False (List.map connectable (cartesianSquare <| List.Extra.unique <| List.concat <| region))
     in
-        List.foldl (||) False (List.map alive graph) 
+        List.foldl (||) False (List.map alive graph)
