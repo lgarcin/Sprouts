@@ -1,13 +1,13 @@
-module Update exposing (..)
+module Update exposing (cycle, merge, newNode, oneBoundaryMove, split, twoBoundaryMove, update)
 
-import Models exposing (..)
-import Messages exposing (..)
 import List.Extra exposing (..)
+import Messages exposing (..)
+import Models exposing (..)
 
 
 twoBoundaryMove : Node -> Node -> Boundary -> Boundary -> Region -> Graph -> Graph
 twoBoundaryMove n1 n2 b1 b2 r g =
-    replaceIf (\rr -> rr == r) ((merge n1 n2 (newNode g) b1 b2) :: (remove b2 (remove b1 r))) g
+    setIf (\rr -> rr == r) (merge n1 n2 (newNode g) b1 b2 :: remove b2 (remove b1 r)) g
 
 
 merge : Node -> Node -> Node -> Boundary -> Boundary -> Boundary
@@ -16,27 +16,27 @@ merge n1 n2 x b1 b2 =
         ( bb1, bb2 ) =
             ( cycle n1 b1, cycle n2 b2 )
     in
-        case ( bb1, bb2 ) of
-            ( [], [] ) ->
-                []
+    case ( bb1, bb2 ) of
+        ( [], [] ) ->
+            []
 
-            ( _, [] ) ->
-                bb1
+        ( _, [] ) ->
+            bb1
 
-            ( [], _ ) ->
-                bb2
+        ( [], _ ) ->
+            bb2
 
-            ( [ _ ], [ _ ] ) ->
-                n1 :: x :: n2 :: [ x ]
+        ( [ _ ], [ _ ] ) ->
+            n1 :: x :: n2 :: [ x ]
 
-            ( _ :: _ :: _, [ _ ] ) ->
-                bb1 ++ (n1 :: x :: n2 :: [ x ])
+        ( _ :: _ :: _, [ _ ] ) ->
+            bb1 ++ (n1 :: x :: n2 :: [ x ])
 
-            ( [ _ ], _ :: _ :: _ ) ->
-                (n1 :: x :: bb2) ++ [ n2, x ]
+        ( [ _ ], _ :: _ :: _ ) ->
+            (n1 :: x :: bb2) ++ [ n2, x ]
 
-            ( _ :: _ :: _, _ :: _ :: _ ) ->
-                bb1 ++ (n1 :: x :: bb2) ++ [ n2, x ]
+        ( _ :: _ :: _, _ :: _ :: _ ) ->
+            bb1 ++ (n1 :: x :: bb2) ++ [ n2, x ]
 
 
 cycle : Node -> Boundary -> Boundary
@@ -48,6 +48,7 @@ cycle x l =
         xs :: li ->
             if xs == x then
                 l
+
             else
                 cycle x (li ++ [ xs ])
 
@@ -58,7 +59,7 @@ oneBoundaryMove n1 n2 b r func g =
         ( b1, b2 ) =
             split n1 n2 (newNode g) b
     in
-        (b1 :: (List.filter func r |> List.Extra.remove b)) :: (b2 :: (List.filter (not << func) r |> List.Extra.remove b)) :: (g |> List.Extra.remove r)
+    (b1 :: (List.filter func r |> List.Extra.remove b)) :: (b2 :: (List.filter (not << func) r |> List.Extra.remove b)) :: (g |> List.Extra.remove r)
 
 
 split : Node -> Node -> Node -> Boundary -> ( Boundary, Boundary )
@@ -71,7 +72,7 @@ split n1 n2 x b =
             ( [ n1, x ], [ n2, x ] )
 
         _ :: _ ->
-            ( List.Extra.dropWhile (\x -> x /= n2) (cycle n1 b) ++ [ n1, x ], (List.Extra.takeWhile (\x -> x /= n2) (cycle n1 b)) ++ [ n2, x ] )
+            ( List.Extra.dropWhile (\v -> v /= n2) (cycle n1 b) ++ [ n1, x ], List.Extra.takeWhile (\v -> v /= n2) (cycle n1 b) ++ [ n2, x ] )
 
 
 newNode : Graph -> Node
@@ -103,13 +104,15 @@ update msg model =
                         ( Just bb, Just rr ) ->
                             if rr /= r then
                                 ( model, Cmd.none )
+
                             else if bb == b then
                                 ( { model | graph = oneBoundaryMove nn n bb rr (\x -> True) model.graph, selectedNode = Nothing, selectedBoundary = Nothing, selectedRegion = Nothing }, Cmd.none )
+
                             else
                                 ( { model | graph = twoBoundaryMove nn n bb b rr model.graph, selectedNode = Nothing, selectedBoundary = Nothing, selectedRegion = Nothing }, Cmd.none )
 
-        KeyMsg keycode ->
-            if keycode == 27 then
-                ( { model | selectedNode = Nothing, selectedBoundary = Nothing, selectedRegion = Nothing }, Cmd.none )
-            else
-                ( model, Cmd.none )
+        KeyPressed "Shift" ->
+            ( { model | selectedNode = Nothing, selectedBoundary = Nothing, selectedRegion = Nothing }, Cmd.none )
+
+        KeyPressed _ ->
+            ( model, Cmd.none )

@@ -1,17 +1,23 @@
-module Main exposing (..)
+module Main exposing (init, main, subscriptions)
 
-import Models exposing (..)
+import Browser
+import Browser.Events as Events
+import Json.Decode as Decode
 import Messages exposing (..)
-import View exposing (..)
+import Models exposing (..)
 import Update exposing (..)
-import Html exposing (..)
-import Keyboard
+import View exposing (..)
+
+
+keyDecoder : Decode.Decoder String
+keyDecoder =
+    Decode.field "key" Decode.string
 
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.batch
-        [ Keyboard.downs KeyMsg
+        [ Events.onKeyPress (Decode.map KeyPressed keyDecoder)
         ]
 
 
@@ -20,11 +26,15 @@ init =
     ( initialModel, Cmd.none )
 
 
-main : Program Never Model Msg
+main : Program () Model Msg
 main =
-    Html.program
-        { init = init
+    Browser.element
+        { init = \_ -> init
         , view = view
         , update = update
         , subscriptions = subscriptions
         }
+
+
+
+-- Régler le problème de la touche Escape

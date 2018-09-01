@@ -1,4 +1,4 @@
-module Models exposing (..)
+module Models exposing (Boundary, Graph, Model, Node, Region, cartesianSquare, initialModel, initialModel_, nbInBoundary, order, playable, selectable, selectable_, selected, selected_)
 
 import List.Extra exposing (..)
 
@@ -64,6 +64,7 @@ nbInBoundary n b =
                     (\x ->
                         if x == n then
                             1
+
                         else
                             0
                     )
@@ -90,10 +91,10 @@ selectable_ : Node -> Model -> Bool
 selectable_ node model =
     case model.selectedNode of
         Nothing ->
-            (order node model.graph) < 3
+            order node model.graph < 3
 
         Just n ->
-            (order node model.graph) < 2 || (n /= node && (order node model.graph) < 3)
+            order node model.graph < 2 || (n /= node && order node model.graph < 3)
 
 
 selectable : Node -> Region -> Model -> Bool
@@ -103,7 +104,7 @@ selectable node region model =
             selectable_ node model
 
         Just r ->
-            (selectable_ node model) && (region == r)
+            selectable_ node model && (region == r)
 
 
 selected_ : Node -> Model -> Bool
@@ -123,7 +124,7 @@ selected node region model =
             selected_ node model
 
         Just r ->
-            (selected_ node model) && (region == r)
+            selected_ node model && (region == r)
 
 
 cartesianSquare : List a -> List ( a, a )
@@ -137,9 +138,9 @@ playable : Graph -> Bool
 playable graph =
     let
         connectable ( n1, n2 ) =
-            (order n1 graph < 2) || (n1 /= n2 && (order n1 graph) < 3 && (order n2 graph) < 3)
+            (order n1 graph < 2) || (n1 /= n2 && order n1 graph < 3 && order n2 graph < 3)
 
         alive region =
             List.foldl (||) False (List.map connectable (cartesianSquare <| List.Extra.unique <| List.concat <| region))
     in
-        List.foldl (||) False (List.map alive graph)
+    List.foldl (||) False (List.map alive graph)

@@ -1,9 +1,8 @@
-module Messages exposing (..)
+module Messages exposing (Msg(..))
 
 import Models exposing (..)
-import Keyboard exposing (..)
 
 
 type Msg
     = Select Node Boundary Region
-    | KeyMsg KeyCode
+    | KeyPressed String
