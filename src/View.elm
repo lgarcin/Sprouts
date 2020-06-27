@@ -5,7 +5,7 @@ import Messages exposing (..)
 import Models exposing (..)
 import Svg exposing (Svg, circle, rect, svg)
 import Svg.Attributes exposing (..)
-import Svg.Events exposing (onMouseDown, onMouseOut, onMouseOver)
+import Svg.Events exposing (onMouseDown)
 
 
 drawGraph : Model -> List (Svg Msg)
